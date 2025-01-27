@@ -1,133 +1,123 @@
-// Minesweeper game implementation in JavaScript
-
-// Create and initialize the Minesweeper board
-const createBoard = (rows, cols, mines) => {
-  const board = Array.from({ length: rows }, () => Array(cols).fill({ value: 0, revealed: false }));
-
-  // Place mines randomly
-  let placedMines = 0;
-  while (placedMines < mines) {
-    const row = Math.floor(Math.random() * rows);
-    const col = Math.floor(Math.random() * cols);
-    if (board[row][col].value !== 'M') {
-      board[row][col] = { value: 'M', revealed: false };
-      placedMines++;
-      
-      // Update numbers around the mine
-      for (let i = -1; i <= 1; i++) {
-        for (let j = -1; j <= 1; j++) {
-          const newRow = row + i;
-          const newCol = col + j;
-          if (
-            newRow >= 0 && newRow < rows &&
-            newCol >= 0 && newCol < cols &&
-            board[newRow][newCol].value !== 'M'
-          ) {
-            board[newRow][newCol] = {
-              ...board[newRow][newCol],
-              value: board[newRow][newCol].value + 1,
-            };
-          }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
         }
-      }
-    }
-  }
+        canvas {
+            border: 1px solid #fff;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-  return board;
-};
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-const revealCell = (board, row, col) => {
-  if (
-    row < 0 || row >= board.length ||
-    col < 0 || col >= board[0].length ||
-    board[row][col].revealed
-  ) {
-    return;
-  }
+        const boxSize = 20;
+        const canvasSize = 400;
+        let snake = [{ x: boxSize * 5, y: boxSize * 5 }];
+        let direction = "RIGHT";
+        let food = generateFood();
+        let score = 0;
 
-  board[row][col].revealed = true;
+        document.addEventListener("keydown", changeDirection);
 
-  if (board[row][col].value === 0) {
-    for (let i = -1; i <= 1; i++) {
-      for (let j = -1; j <= 1; j++) {
-        revealCell(board, row + i, col + j);
-      }
-    }
-  }
-};
+        function drawBox(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, boxSize, boxSize);
+            ctx.strokeStyle = "#000";
+            ctx.strokeRect(x, y, boxSize, boxSize);
+        }
 
-const renderBoard = (board) => {
-  const container = document.getElementById('minesweeper');
-  container.innerHTML = '';
+        function generateFood() {
+            return {
+                x: Math.floor(Math.random() * (canvasSize / boxSize)) * boxSize,
+                y: Math.floor(Math.random() * (canvasSize / boxSize)) * boxSize
+            };
+        }
 
-  board.forEach((row, rowIndex) => {
-    const rowElement = document.createElement('div');
-    rowElement.className = 'row';
+        function changeDirection(event) {
+            if ((event.key === "ArrowUp" || event.key === "w") && direction !== "DOWN") direction = "UP";
+            else if ((event.key === "ArrowDown" || event.key === "s") && direction !== "UP") direction = "DOWN";
+            else if ((event.key === "ArrowLeft" || event.key === "a") && direction !== "RIGHT") direction = "LEFT";
+            else if ((event.key === "ArrowRight" || event.key === "d") && direction !== "LEFT") direction = "RIGHT";
+        }
 
-    row.forEach((cell, colIndex) => {
-      const cellElement = document.createElement('div');
-      cellElement.className = 'cell';
+        function updateSnake() {
+            const head = { ...snake[0] };
 
-      if (cell.revealed) {
-        cellElement.classList.add('revealed');
-        cellElement.textContent = cell.value === 0 ? '' : cell.value === 'M' ? '💣' : cell.value;
-      } else {
-        cellElement.addEventListener('click', () => {
-          if (cell.value === 'M') {
-            alert('Game Over!');
-            revealAll(board);
-          } else {
-            revealCell(board, rowIndex, colIndex);
-          }
-          renderBoard(board);
-        });
-      }
+            if (direction === "UP") head.y -= boxSize;
+            if (direction === "DOWN") head.y += boxSize;
+            if (direction === "LEFT") head.x -= boxSize;
+            if (direction === "RIGHT") head.x += boxSize;
 
-      rowElement.appendChild(cellElement);
-    });
+            snake.unshift(head);
 
-    container.appendChild(rowElement);
-  });
-};
+            // Check if the snake eats the food
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                food = generateFood();
+            } else {
+                snake.pop(); // Remove the tail
+            }
+        }
 
-const revealAll = (board) => {
-  board.forEach(row => row.forEach(cell => cell.revealed = true));
-};
+        function checkCollision() {
+            const head = snake[0];
 
-// Initialization
-const rows = 10;
-const cols = 10;
-const mines = 15;
-const board = createBoard(rows, cols, mines);
+            // Check wall collision
+            if (
+                head.x < 0 ||
+                head.x >= canvasSize ||
+                head.y < 0 ||
+                head.y >= canvasSize
+            ) {
+                return true;
+            }
 
-// Render the board on the webpage
-document.body.innerHTML = '<div id="minesweeper"></div>';
-document.head.innerHTML += `
-  <style>
-    #minesweeper {
-      display: grid;
-      grid-template-rows: repeat(${rows}, 30px);
-      grid-template-columns: repeat(${cols}, 30px);
-      gap: 2px;
-    }
-    .row {
-      display: flex;
-    }
-    .cell {
-      width: 30px;
-      height: 30px;
-      background: lightgray;
-      text-align: center;
-      line-height: 30px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      font-size: 16px;
-      font-family: Arial, sans-serif;
-    }
-    .cell.revealed {
-      background: white;
-      cursor: default;
-    }
-  </style>
-`;
-renderBoard(board);
+            // Check self-collision
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function drawGame() {
+            if (checkCollision()) {
+                alert(`Game Over! Your score: ${score}`);
+                document.location.reload();
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvasSize, canvasSize);
+
+            drawBox(food.x, food.y, "red");
+
+            for (let i = 0; i < snake.length; i++) {
+                drawBox(snake[i].x, snake[i].y, "lime");
+            }
+
+            updateSnake();
+
+            setTimeout(drawGame, 100);
+        }
+
+        drawGame();
+    </script>
+</body>
+</html>
