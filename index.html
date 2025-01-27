@@ -1,146 +1,188 @@
+// Minesweeper Game
 
+// Set up the game variables
+const rows = 10; // Number of rows
+const cols = 10; // Number of columns
+const numMines = 20; // Number of mines
+let board = [];
+let revealed = [];
+
+// Generate the game board
+function initializeBoard() {
+  board = Array.from({ length: rows }, () => Array(cols).fill(0));
+  revealed = Array.from({ length: rows }, () => Array(cols).fill(false));
+
+  // Place mines randomly
+  let minesPlaced = 0;
+  while (minesPlaced < numMines) {
+    const row = Math.floor(Math.random() * rows);
+    const col = Math.floor(Math.random() * cols);
+    if (board[row][col] === 0) {
+      board[row][col] = 'M';
+      minesPlaced++;
+      updateNumbersAround(row, col);
+    }
+  }
+}
+
+// Update numbers around a mine
+function updateNumbersAround(row, col) {
+  for (let i = -1; i <= 1; i++) {
+    for (let j = -1; j <= 1; j++) {
+      const newRow = row + i;
+      const newCol = col + j;
+      if (
+        newRow >= 0 &&
+        newRow < rows &&
+        newCol >= 0 &&
+        newCol < cols &&
+        board[newRow][newCol] !== 'M'
+      ) {
+        board[newRow][newCol]++;
+      }
+    }
+  }
+}
+
+// Render the board on the screen
+function renderBoard() {
+  const gameContainer = document.getElementById('game');
+  gameContainer.innerHTML = '';
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.row = row;
+      cell.dataset.col = col;
+      
+      if (revealed[row][col]) {
+        if (board[row][col] === 'M') {
+          cell.textContent = '💣';
+          cell.classList.add('mine');
+        } else {
+          cell.textContent = board[row][col] || '';
+          cell.classList.add('revealed');
+        }
+      }
+
+      cell.addEventListener('click', handleCellClick);
+      gameContainer.appendChild(cell);
+    }
+  }
+}
+
+// Handle cell click
+function handleCellClick(event) {
+  const row = parseInt(event.target.dataset.row);
+  const col = parseInt(event.target.dataset.col);
+
+  if (revealed[row][col]) return;
+
+  revealed[row][col] = true;
+
+  if (board[row][col] === 'M') {
+    alert('Game Over!');
+    revealAll();
+    return;
+  }
+
+  if (board[row][col] === 0) {
+    revealEmptyCells(row, col);
+  }
+
+  renderBoard();
+}
+
+// Reveal all cells
+function revealAll() {
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      revealed[row][col] = true;
+    }
+  }
+  renderBoard();
+}
+
+// Reveal empty cells recursively
+function revealEmptyCells(row, col) {
+  for (let i = -1; i <= 1; i++) {
+    for (let j = -1; j <= 1; j++) {
+      const newRow = row + i;
+      const newCol = col + j;
+      if (
+        newRow >= 0 &&
+        newRow < rows &&
+        newCol >= 0 &&
+        newCol < cols &&
+        !revealed[newRow][newCol]
+      ) {
+        revealed[newRow][newCol] = true;
+        if (board[newRow][newCol] === 0) {
+          revealEmptyCells(newRow, newCol);
+        }
+      }
+    }
+  }
+}
+
+// Initialize the game
+initializeBoard();
+document.addEventListener('DOMContentLoaded', () => {
+  renderBoard();
+});
+
+// For GitHub: Add basic HTML and CSS setup
+const rootHTML = `
 <!DOCTYPE html>
-<html lang="fi">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f3f3f3;
+    }
+    #game {
+      display: grid;
+      grid-template-columns: repeat(${cols}, 30px);
+      grid-template-rows: repeat(${rows}, 30px);
+      gap: 2px;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #ddd;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .cell.revealed {
+      background-color: #fff;
+      cursor: default;
+    }
+    .cell.mine {
+      background-color: #f00;
+      color: #fff;
+    }
+  </style>
 </head>
 <body>
-    <script>
-        // Minesweeper Game
-
-        // Set up the game variables
-        const rows = 10; // Number of rows
-        const cols = 10; // Number of columns
-        const numMines = 20; // Number of mines
-        let board = [];
-        let revealed = [];
-        
-        // Generate the game board
-        function initializeBoard() {
-          board = Array.from({ length: rows }, () => Array(cols).fill(0));
-          revealed = Array.from({ length: rows }, () => Array(cols).fill(false));
-        
-          // Place mines randomly
-          let minesPlaced = 0;
-          while (minesPlaced < numMines) {
-            const row = Math.floor(Math.random() * rows);
-            const col = Math.floor(Math.random() * cols);
-            if (board[row][col] === 0) {
-              board[row][col] = 'M';
-              minesPlaced++;
-              updateNumbersAround(row, col);
-            }
-          }
-        }
-        
-        // Update numbers around a mine
-        function updateNumbersAround(row, col) {
-          for (let i = -1; i <= 1; i++) {
-            for (let j = -1; j <= 1; j++) {
-              const newRow = row + i;
-              const newCol = col + j;
-              if (
-                newRow >= 0 &&
-                newRow < rows &&
-                newCol >= 0 &&
-                newCol < cols &&
-                board[newRow][newCol] !== 'M'
-              ) {
-                board[newRow][newCol]++;
-              }
-            }
-          }
-        }
-        
-        // Render the board on the screen
-        function renderBoard() {
-          const gameContainer = document.getElementById('game');
-          gameContainer.innerHTML = '';
-        
-          for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-              const cell = document.createElement('div');
-              cell.className = 'cell';
-              cell.dataset.row = row;
-              cell.dataset.col = col;
-              
-              if (revealed[row][col]) {
-                if (board[row][col] === 'M') {
-                  cell.textContent = '💣';
-                  cell.classList.add('mine');
-                } else {
-                  cell.textContent = board[row][col] || '';
-                  cell.classList.add('revealed');
-                }
-              }
-        
-              cell.addEventListener('click', handleCellClick);
-              gameContainer.appendChild(cell);
-            }
-          }
-        }
-        
-        // Handle cell click
-        function handleCellClick(event) {
-          const row = parseInt(event.target.dataset.row);
-          const col = parseInt(event.target.dataset.col);
-        
-          if (revealed[row][col]) return;
-        
-          revealed[row][col] = true;
-        
-          if (board[row][col] === 'M') {
-            alert('Game Over!');
-            revealAll();
-            return;
-          }
-        
-          if (board[row][col] === 0) {
-            revealEmptyCells(row, col);
-          }
-        
-          renderBoard();
-        }
-        
-        // Reveal all cells
-        function revealAll() {
-          for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-              revealed[row][col] = true;
-            }
-          }
-          renderBoard();
-        }
-        
-        // Reveal empty cells recursively
-        function revealEmptyCells(row, col) {
-          for (let i = -1; i <= 1; i++) {
-            for (let j = -1; j <= 1; j++) {
-              const newRow = row + i;
-              const newCol = col + j;
-              if (
-                newRow >= 0 &&
-                newRow < rows &&
-                newCol >= 0 &&
-                newCol < cols &&
-                !revealed[newRow][newCol]
-              ) {
-                revealed[newRow][newCol] = true;
-                if (board[newRow][newCol] === 0) {
-                  revealEmptyCells(newRow, newCol);
-                }
-              }
-            }
-          }
-        }
-        
-        // Initialize the game
-        initializeBoard();
-        document.addEventListener('DOMContentLoaded', () => {
-          renderBoard();
-        });
-        </script>
+  <div id="game"></div>
+  <script src="script.js"></script>
 </body>
 </html>
+`;
+
+// Export HTML file
+const fs = require('fs');
+fs.writeFileSync('index.html', rootHTML);
